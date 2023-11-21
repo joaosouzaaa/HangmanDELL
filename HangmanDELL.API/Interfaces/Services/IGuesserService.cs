@@ -5,5 +5,5 @@ namespace HangmanDELL.API.Interfaces.Services;
 
 public interface IGuesserService
 {
-    Task<HistoryReponse?> GuessWordAsync(GuessWordArgument guessWord);
+    Task<HistoryResponse?> GuessWordAsync(GuessWordArgument guessWord);
 }

@@ -3,7 +3,6 @@ using HangmanDELL.API.Data.Repositories.BaseRepositories;
 using HangmanDELL.API.Entities;
 using HangmanDELL.API.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace HangmanDELL.API.Data.Repositories;
 
@@ -34,6 +33,6 @@ public sealed class HistoryRepository : BaseRepository<History>, IHistoryReposit
         await SaveChangesAsync();
     }
 
-    public async Task<History?> GetByAsync(Expression<Func<History, bool>> predicate)  =>
-        await _dbContextSet.Include(h => h.Guesses).FirstOrDefaultAsync(predicate);
+    public async Task<History?> GetByAsync(string? ipAddress, int? ipPort)  =>
+        await _dbContextSet.Include(h => h.Guesses).FirstOrDefaultAsync(u => u.IpAddress == ipAddress && u.IpPort == ipPort);
 }

@@ -2,6 +2,7 @@
 using HangmanDELL.API.DataTransferObjects.Guess;
 using HangmanDELL.API.DataTransferObjects.History;
 using HangmanDELL.API.Interfaces.Services;
+using HangmanDELL.API.Settings.NotificationSettings;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HangmanDELL.API.Controllers;
@@ -18,12 +19,15 @@ public sealed class HangmanController : ControllerBase
     }
 
     [HttpPost("guess-word")]
-    public async Task<HistoryReponse?> GuessWordAsync([FromBody] GuessRequest guessRequest)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HistoryResponse))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(List<Notification>))]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<HistoryResponse?> GuessWordAsync([FromBody] GuessRequest guessRequest)
     {
         var guessWordArgument = new GuessWordArgument()
         {
             IpAddress = HttpContext.Connection.RemoteIpAddress == null ? null : HttpContext.Connection.RemoteIpAddress.ToString(),
-            GuessRequest = guessRequest,
+            LetterToGuess = guessRequest.LetterToGuess,
             IpPort = HttpContext.Connection.RemotePort
         };
 

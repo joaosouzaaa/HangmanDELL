@@ -8,6 +8,7 @@ public static class ServicesDependencyInjection
     public static void AddServicesDependencyInjection(this IServiceCollection services)
     {
         services.AddScoped<IGuesserService, GuesserService>();
+        services.AddScoped<ILetterGuesserService, LetterGuesserService>();
         services.AddScoped<IQueryWordsService, QueryWordsService>();
     }
 }

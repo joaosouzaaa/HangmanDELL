@@ -2,7 +2,7 @@
 
 namespace HangmanDELL.API.DataTransferObjects.History;
 
-public sealed class HistoryReponse
+public sealed class HistoryResponse
 {
     public string? WordProgress { get; set; }
     public required int NumberOfLives { get; set; }

@@ -13,11 +13,11 @@ public sealed class HistoryMapper : IHistoryMapper
         _guessMapper = guessMapper;
     }
 
-    public HistoryReponse DomainToResponse(History history)
+    public HistoryResponse DomainToResponse(History history)
     {
         var guessResponseList = _guessMapper.DomainListToResponseList(history.Guesses);
 
-        return new HistoryReponse()
+        return new HistoryResponse()
         {
             Guesses = guessResponseList,
             NumberOfLives = history.NumberOfLives,

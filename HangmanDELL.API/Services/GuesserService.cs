@@ -12,33 +12,36 @@ namespace HangmanDELL.API.Services;
 public sealed class GuesserService : IGuesserService
 {
     private readonly IHistoryRepository _historyRepository;
-    private readonly IQueryWordsService _queryWordsService;
     private readonly IHistoryMapper _historyMapper;
+    private readonly IQueryWordsService _queryWordsService;
+    private readonly ILetterGuesserService _letterGuesserService;
     private readonly INotificationHandler _notificationHandler;
 
-    public GuesserService(IHistoryRepository historyRepository, IQueryWordsService queryWordsService,
-                          IHistoryMapper historyMapper, INotificationHandler notificationHandler)
+    public GuesserService(IHistoryRepository historyRepository, IHistoryMapper historyMapper,
+                          IQueryWordsService queryWordsService, ILetterGuesserService letterGuesserService,
+                          INotificationHandler notificationHandler)
     {
         _historyRepository = historyRepository;
-        _queryWordsService = queryWordsService;
         _historyMapper = historyMapper;
+        _queryWordsService = queryWordsService;
+        _letterGuesserService = letterGuesserService;
         _notificationHandler = notificationHandler;
     }
 
-    public async Task<HistoryReponse?> GuessWordAsync(GuessWordArgument guessWord)
+    public async Task<HistoryResponse?> GuessWordAsync(GuessWordArgument guessWord)
     {
-        if (!char.IsLetter(guessWord.GuessRequest.LetterToGuess))
+        if (!char.IsLetter(guessWord.LetterToGuess))
         {
             _notificationHandler.AddNotification("Invalid", "Invalid Letter.");
             return null;
         }
 
-        var history = await _historyRepository.GetByAsync(u => u.IpAddress == guessWord.IpAddress && u.IpPort == guessWord.IpPort);
+        var history = await _historyRepository.GetByAsync(guessWord.IpAddress, guessWord.IpPort);
 
         if (history is null)
             return await AddNonexistantGuessAsync(guessWord);
 
-        if(history.Guesses.Any(g => char.ToUpper(g.GuessedLetter) == guessWord.GuessRequest.LetterToGuess))
+        if(history.Guesses.Any(g => char.ToUpper(g.GuessedLetter) == guessWord.LetterToGuess))
         {
             _notificationHandler.AddNotification("Repeated letter", "You cannot play the same letter twice.");
             return null;
@@ -55,16 +58,23 @@ public sealed class GuesserService : IGuesserService
         return historyResponse; 
     }
 
-    private async Task<HistoryReponse> AddNonexistantGuessAsync(GuessWordArgument guessWord)
+    private async Task<HistoryResponse> AddNonexistantGuessAsync(GuessWordArgument guessWord)
     {
         var wordToGuess = _queryWordsService.GetRandomWord();
-        var letterToGuess = guessWord.GuessRequest.LetterToGuess;
-        var (wordProgress, isSuccess) = GuessWord(wordToGuess, new string('_', wordToGuess.Length), letterToGuess);
+        var letterToGuess = guessWord.LetterToGuess;
+
+        var rightLetter = new RightLetterArgument()
+        {
+            GuessProgress = new string('_', wordToGuess.Length),
+            Letter = letterToGuess,
+            WordToGuess = wordToGuess
+        };
+        var rightLetterResult = _letterGuesserService.IsRightLetter(rightLetter);
 
         var guess = new Guess()
         {
             GuessedLetter = letterToGuess,
-            IsSuccess = isSuccess
+            IsSuccess = rightLetterResult.IsSuccess
         };
         var history = new History()
         {
@@ -72,53 +82,42 @@ public sealed class GuesserService : IGuesserService
             IpPort = guessWord.IpPort,
             WordToGuess = wordToGuess,
             Guesses = new List<Guess>(),
-            WordProgress = wordProgress
+            WordProgress = rightLetterResult.GuessedWord
         };
 
         history.Guesses.Add(guess);
-        history.NumberOfLives = isSuccess ? LivesConstants.DefaultNumberOfLives : LivesConstants.DefaultNumberOfLives - 1;
+        history.NumberOfLives = rightLetterResult.IsSuccess ? LivesConstants.DefaultNumberOfLives : LivesConstants.DefaultNumberOfLives - 1;
 
         await _historyRepository.AddAsync(history);
 
         return _historyMapper.DomainToResponse(history);
     }
 
-    private async Task<HistoryReponse> UpdateExistantGuessAsync(History history, GuessWordArgument guessWord)
+    private async Task<HistoryResponse> UpdateExistantGuessAsync(History history, GuessWordArgument guessWord)
     {
-        var letterToGuess = guessWord.GuessRequest.LetterToGuess;
-        var (wordProgress, isSuccess) = GuessWord(history.WordToGuess!, history.WordProgress!, letterToGuess);
+        var letterToGuess = guessWord.LetterToGuess;
+        var rightLetter = new RightLetterArgument()
+        {
+            GuessProgress = history.WordProgress!,
+            Letter = letterToGuess,
+            WordToGuess = history.WordToGuess!
+        };
+        var rightLetterResult = _letterGuesserService.IsRightLetter(rightLetter);
 
         var guess = new Guess()
         {
             GuessedLetter = letterToGuess,
-            IsSuccess = isSuccess,
+            IsSuccess = rightLetterResult.IsSuccess,
             Creation = DateTime.Now,
             HistoryId = history.Id
         };
 
-        history.WordProgress = wordProgress;
+        history.WordProgress = rightLetterResult.GuessedWord;
         history.Guesses.Add(guess);
-        history.NumberOfLives = isSuccess ? history.NumberOfLives : history.NumberOfLives - 1;
+        history.NumberOfLives = rightLetterResult.IsSuccess ? history.NumberOfLives : history.NumberOfLives - 1;
 
         await _historyRepository.UpdateAsync(history);
 
         return _historyMapper.DomainToResponse(history);
-    }
-
-    private (string guessedWord, bool isSuccess) GuessWord(string wordToGuess, string guessProgress, char letter)
-    {
-        var isSuccess = false;
-        char[] guessedWord = guessProgress.ToCharArray();
-
-        for (int i = 0; i < wordToGuess.Length; i++)
-        {
-            if (wordToGuess[i] == letter)
-            {
-                guessedWord[i] = letter;
-                isSuccess = true;
-            }
-        }
-
-        return (new string(guessedWord), isSuccess);
     }
 }

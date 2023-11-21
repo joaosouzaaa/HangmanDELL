@@ -7,12 +7,40 @@ public sealed class QueryWordsService : IQueryWordsService
 {
     public string GetRandomWord()
     {
-        const string wordListFileName = "words.xml";
-        string wordListFilePath = Path.Combine(Directory.GetCurrentDirectory(), wordListFileName);
-        var wordList = new List<string>();
+        var wordList = GetWordListFromXml();
 
+        var random = new Random();
+        int randomIndex = random.Next(wordList.Count);
+
+        return wordList[randomIndex];
+    }
+
+    private List<string> GetWordListFromXml()
+    {
+        const string xmlContent = @"
+        <hangman>
+        	<word_list>
+        		<word>DELL</word>
+        		<word>DELIVER</word>
+        		<word>TECHNOLOGY</word>
+        		<word>CUSTOMER</word>
+        		<word>CLOUD</word>
+        		<word>COMPUTER</word>
+        		<word>SERVER</word>
+        		<word>ADVANCED</word>
+        		<word>STORAGE</word>
+        		<word>SOLLUTIONS</word>
+        		<word>COMMITMENT</word>
+        		<word>DIVERSITY</word>
+        		<word>ENGAGEMENT</word>
+        		<word>COMMUNITY</word>
+        		<word>MILESTONE</word>
+        	</word_list>
+        </hangman>";
+
+        var wordList = new List<string>();
         var xmlDocument = new XmlDocument();
-        xmlDocument.Load(wordListFilePath);
+        xmlDocument.LoadXml(xmlContent);
 
         XmlNodeList wordNodes = xmlDocument.SelectNodes("//hangman/word_list/word")!;
 
@@ -21,9 +49,6 @@ public sealed class QueryWordsService : IQueryWordsService
             wordList.Add(node.InnerText);
         }
 
-        var random = new Random();
-        int randomIndex = random.Next(wordList.Count);
-
-        return wordList[randomIndex];
+        return wordList;
     }
 }

@@ -7,7 +7,7 @@ public static class DependencyInjectionHandler
 {
     public static void AddDependencyInjection(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("LocalConnectionString");
+        var connectionString = configuration.GetConnectionString("AzureConnectionString");
         services.AddDbContext<HangmanDbContext>(options =>
         {
             options.UseSqlServer(connectionString);

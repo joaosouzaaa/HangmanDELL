@@ -1,10 +1,13 @@
-﻿using HangmanDELL.API.DataTransferObjects.Guess;
-
-namespace HangmanDELL.API.Arguments;
+﻿namespace HangmanDELL.API.Arguments;
 
 public sealed class GuessWordArgument
 {
-    public required GuessRequest GuessRequest { get; set; }
+    private char _letterToGuess;
+    public required char LetterToGuess
+    {
+        get => _letterToGuess;
+        set => _letterToGuess = char.ToUpper(value);
+    }
     public string? IpAddress { get; set; }
     public int? IpPort { get; set; }
 }

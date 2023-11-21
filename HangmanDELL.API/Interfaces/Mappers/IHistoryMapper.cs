@@ -5,5 +5,5 @@ namespace HangmanDELL.API.Interfaces.Mappers;
 
 public interface IHistoryMapper
 {
-    HistoryReponse DomainToResponse(History history);
+    HistoryResponse DomainToResponse(History history);
 }
